@@ -1,0 +1,9 @@
+name = workflow_hide_fields
+description = 
+core = 7.x
+package = 
+php = 
+version =
+dependencies[] = 
+files[] = 
+configure = 
