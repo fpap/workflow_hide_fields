@@ -1,9 +1,9 @@
-name = workflow_hide_fields
-description = 
+name = Workflow hide fields
+description = This module hides fields.
 core = 7.x
 package = 
 php = 
 version =
 dependencies[] = 
 files[] = 
-configure = 
+configure = admin/config/content/workflow_hide_fields
