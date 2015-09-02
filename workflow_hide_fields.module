@@ -61,9 +61,16 @@ function workflow_hide_fields_field_access($op, $field, $entity_type, $entity, $
   if (isset($entity->type) && $entity->type == "orden_de_trabajo") { // TODO: Convert to variable "orden_de_trabajo"
     // If the field is the right one
     if (($field['field_name'] == 'field_responsable') && ($op == 'edit')) { // TODO: Convert to variable 'field_responsable'
-      $en_creacion = !isset($entity->field_flujo_de_trabajo); // TODO: Work out how generalize this, or convert to variable...
+      $propiedad = 'field_flujo_de_trabajo'; // TODO: Convert to variable 'field_flujo_de_trabajo'
+      $en_creacion = !isset($entity->$propiedad);
+      
+      $state = '0';
+      if (!$en_creacion) {
+        $entity_property = $entity->$propiedad;
+        $state = $entity_property['und'][0]['value'];
+      }
 
-      if ($en_creacion || $entity->field_flujo_de_trabajo['und'][0]['value'] != '2')
+      if ($en_creacion || $state != '2')
         return user_access('administer nodes', $account);
     }
     return TRUE;
@@ -98,7 +105,18 @@ function workflow_hide_fields_node_access($node, $op, $account) {
       $usuario_logueado_es_supervisor = true; // TODO: Change the variable name
     }
 
-    $estado = $node->field_flujo_de_trabajo['und'][0]['value']; // TODO: Aja! And here...?
+    $property = 'field_flujo_de_trabajo'; // TODO: Convert to variable 'field_flujo_de_trabajo'
+    $node_property = $node->$property;
+    $estado = $node_property['und'][0]['value'];
+    
+    $property_resp = 'field_responsable';
+    $responsable = NULL;
+    if (isset($node->$property_resp)) {
+      $node_property_resp = $node->$property_resp;
+      if (isset($node_property_resp['und']))
+        if (isset($node_property_resp['und'][0]))
+          $responsable = $node_property_resp['und'][0]['target_id']; 
+    }
 
     if ($op == "update") {
       $en_validacion = $estado == 2;
@@ -106,29 +124,17 @@ function workflow_hide_fields_node_access($node, $op, $account) {
 
       $supervisor_validando = $en_validacion && $usuario_logueado_es_supervisor;
 
-      /* drupal_set_message(t("Estado: ") . '<pre>' . print_r($estado, true) . '</pre>', 'warning');
-      drupal_set_message(t("En validacion: ") . '<pre>' . print_r($en_validacion, true) . '</pre>', 'warning');
-      drupal_set_message(t("Usuario logueado es supervisor: ") . '<pre>' . print_r($usuario_logueado_es_supervisor, true) . '</pre>', 'warning');
-      drupal_set_message(t("Supervisor validando: ") . '<pre>' . print_r($supervisor_validando, true) . '</pre>', 'warning');
-       */
-
       if ($supervisor_validando) {
-        drupal_set_message(t("Supervisor validando!! "), 'warning');
         return NODE_ACCESS_IGNORE;
       }
 
       if (!$en_validacion && !$terminado) {
-        $responsable = $node->field_responsable['und'][0]['target_id'];
-
         if ($responsable == $logueado) {
-
-          drupal_set_message(t("responsable logueado!!! "), 'warning');
           return NODE_ACCESS_IGNORE;
         }
       }
 
       if (($autor == $logueado) && $terminado) {
-        drupal_set_message(t("Autor logueado!!! "), 'warning');
         return NODE_ACCESS_IGNORE;
       }
       else
@@ -137,9 +143,6 @@ function workflow_hide_fields_node_access($node, $op, $account) {
 
     // If there is a responsible (state >= 3) and the logged in user is that responsible, he/she can see it
     if ($estado >= 3) {
-
-      $responsable = $node->field_responsable['und'][0]['target_id'];
-
       if ($responsable == $logueado) {
         return NODE_ACCESS_IGNORE;
       }
