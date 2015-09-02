@@ -3,6 +3,6 @@ description = This module hides fields.
 core = 7.x
 package = Workflow
 version = 7.x-0.1-alpha1
-dependencies[] = Workflow
+dependencies[] = workflow
 files[] = 
 configure = admin/config/content/workflow_hide_fields
