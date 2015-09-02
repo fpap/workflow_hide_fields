@@ -1,1 +1,153 @@
 <?php
+
+/**
+ * Implements hook_help().
+ *
+ * Displays help and module information.
+ *
+ * @param path
+ *   Which path of the site we're using to display help
+ * @param arg
+ *   Array that holds the current path as returned from arg() function
+ */
+function workflow_hide_fields_help($path, $arg) {
+  switch ($path) {
+    case "admin/help#workflow_hide_fields":
+      // TODO: Improve help
+      return '<p>' . t("Hide given fields in specific states.") . '</p>';
+      break;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function workflow_hide_fields_menu() {
+  $items = array();
+  $items['admin/config/content/workflow_hide_fields'] = array(
+    'title' => 'Workflow hide fields',
+    'description' => 'Configuration for Workflow hide fields',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('workflow_hide_fields_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Page callback: Hide fields settings
+ *
+ * @see workflow_hide_fields_menu()
+ */
+function workflow_hide_fields_form($form, &$form_state) {
+
+  //TODO: This is just... dummy, do something functional
+  $form['workflow_hide_fields_thefields'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Fields to be hidden'),
+    '#default_value' => variable_get('workflow_hide_fields_thefields', ""),
+    '#description' => t("List of fields to be hidden.")
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_field_access
+ */
+function workflow_hide_fields_field_access($op, $field, $entity_type, $entity, $account) {
+  // If the entity is equal as the given type
+  if (isset($entity->type) && $entity->type == "orden_de_trabajo") { // TODO: Convert to variable "orden_de_trabajo"
+    // If the field is the right one
+    if (($field['field_name'] == 'field_responsable') && ($op == 'edit')) { // TODO: Convert to variable 'field_responsable'
+      $en_creacion = !isset($entity->field_flujo_de_trabajo); // TODO: Work out how generalize this, or convert to variable...
+
+      if ($en_creacion || $entity->field_flujo_de_trabajo['und'][0]['value'] != '2')
+        return user_access('administer nodes', $account);
+    }
+    return TRUE;
+  }
+}
+
+function workflow_hide_fields_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'orden_de_trabajo_node_form') { // TODO: Convert to variable 'orden_de_trabajo_node_form'
+    $node = $form_state['node'];
+    $new_node = (!isset($node->nid) || isset($node->is_new));
+
+    if (!$new_node) {
+      $form['title']['#disabled'] = TRUE; // TODO: Convert to variable 'title'
+      $form['body']['#disabled'] = TRUE; // TODO: Convert to variable 'body'
+    }
+  }
+}
+
+function workflow_hide_fields_node_access($node, $op, $account) {
+  // Add your extra validation checks here
+  // To deny access return NODE_ACCESS_DENY otherwise return nothing or NODE_ACCESS_IGNORE.
+
+  if (isset($node->type) && $node->type == "orden_de_trabajo") { // TODO: Convert to variable "orden_de_trabajo"
+    global $user;
+
+    $logueado = $user->uid;
+    $autor = $node->uid;
+
+    $usuario_logueado_es_supervisor = false;
+
+    if (in_array('supervisor', $user->roles)) { // TODO: Convert to variable 'supervisor'
+      $usuario_logueado_es_supervisor = true; // TODO: Change the variable name
+    }
+
+    $estado = $node->field_flujo_de_trabajo['und'][0]['value']; // TODO: Aja! And here...?
+
+    if ($op == "update") {
+      $en_validacion = $estado == 2;
+      $terminado = ($estado == 6) || ($estado == 7);
+
+      $supervisor_validando = $en_validacion && $usuario_logueado_es_supervisor;
+
+      /* drupal_set_message(t("Estado: ") . '<pre>' . print_r($estado, true) . '</pre>', 'warning');
+      drupal_set_message(t("En validacion: ") . '<pre>' . print_r($en_validacion, true) . '</pre>', 'warning');
+      drupal_set_message(t("Usuario logueado es supervisor: ") . '<pre>' . print_r($usuario_logueado_es_supervisor, true) . '</pre>', 'warning');
+      drupal_set_message(t("Supervisor validando: ") . '<pre>' . print_r($supervisor_validando, true) . '</pre>', 'warning');
+       */
+
+      if ($supervisor_validando) {
+        drupal_set_message(t("Supervisor validando!! "), 'warning');
+        return NODE_ACCESS_IGNORE;
+      }
+
+      if (!$en_validacion && !$terminado) {
+        $responsable = $node->field_responsable['und'][0]['target_id'];
+
+        if ($responsable == $logueado) {
+
+          drupal_set_message(t("responsable logueado!!! "), 'warning');
+          return NODE_ACCESS_IGNORE;
+        }
+      }
+
+      if (($autor == $logueado) && $terminado) {
+        drupal_set_message(t("Autor logueado!!! "), 'warning');
+        return NODE_ACCESS_IGNORE;
+      }
+      else
+        return NODE_ACCESS_DENY;
+    }
+
+    // If there is a responsible (state >= 3) and the logged in user is that responsible, he/she can see it
+    if ($estado >= 3) {
+
+      $responsable = $node->field_responsable['und'][0]['target_id'];
+
+      if ($responsable == $logueado) {
+        return NODE_ACCESS_IGNORE;
+      }
+    }
+
+    // If only author and supervisor can see it
+    if (($autor != $logueado) && (!$usuario_logueado_es_supervisor)) {
+      return NODE_ACCESS_DENY;
+    }
+  }
+}
