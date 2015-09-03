@@ -79,6 +79,7 @@ function workflow_hide_fields_field_access($op, $field, $entity_type, $entity, $
 
 function workflow_hide_fields_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'orden_de_trabajo_node_form') { // TODO: Convert to variable 'orden_de_trabajo_node_form'
+    unset($form['actions']['preview']);
     $node = $form_state['node'];
     $new_node = (!isset($node->nid) || isset($node->is_new));
 
@@ -120,7 +121,10 @@ function workflow_hide_fields_node_access($node, $op, $account) {
 
     if ($op == "update") {
       $en_validacion = $estado == 2;
-      $terminado = ($estado == 6) || ($estado == 7);
+      
+      $final_states = array(6, 7);
+      $terminado = in_array($estado, $final_states);
+      //$terminado = ($estado == 6) || ($estado == 7);
 
       $supervisor_validando = $en_validacion && $usuario_logueado_es_supervisor;
 
@@ -142,7 +146,8 @@ function workflow_hide_fields_node_access($node, $op, $account) {
     }
 
     // If there is a responsible (state >= 3) and the logged in user is that responsible, he/she can see it
-    if ($estado >= 3) {
+    $states_with_responsible = array(4, 5, 6, 7);
+    if (in_array($estado, $states_with_responsible)) {
       if ($responsable == $logueado) {
         return NODE_ACCESS_IGNORE;
       }
