@@ -1,1 +1,111 @@
 <?php
+/**
+ * @file
+ * Installation actions for elexslider
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function workflow_hide_fields_schema() {
+  $schema = array();
+  
+  $schema['workflow_hide_fields_preset'] = array(
+    'description' => t('Table storing preset definitions.'),
+    'export' => array(
+      'key' => 'name',
+      'identifier' => 'preset', // Exports will be defined as $preset
+      'api' => array(
+        'owner' => 'workflow_hide_fields',
+        'api' => 'default_workflow_hide_fields_presets',  // Base name for api include files.
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'name' => array(
+        'description' => 'The machine-readable preset name.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'description' => 'The human-readable title for this preset.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'options' => array(
+        'description' => 'The options array.',
+        'type' => 'blob',
+        'size' => 'big',
+        'serialize' => TRUE,
+      ),
+//      'node_type' => array(
+//        'type' => 'varchar',
+//        'length' => '255',
+//        'not null' => TRUE,
+//        'description' => 'The type of the node of a particular workflow.',
+//      ),
+//      'field_responsible' => array(
+//        'type' => 'varchar',
+//        'length' => '255',
+//        'not null' => FALSE,
+//        'description' => 'The field of the responsible of a particular workflow (optional).',
+//      ),
+//      'field_rating' => array(
+//        'type' => 'varchar',
+//        'length' => '255',
+//        'not null' => FALSE,
+//        'description' => 'The field of the rating (optional).',
+//      ),
+//      'field_state' => array(
+//        'type' => 'varchar',
+//        'length' => '255',
+//        'not null' => TRUE,
+//        'description' => 'The field of the workflow state.',
+//      ),
+//      'fields_writable_only_on_creation' => array(
+//        'type' => 'varchar',
+//        'length' => '255',
+//        'not null' => FALSE,
+//        'description' => 'Comma-separated fields that are only writable on creation (optional).',
+//      ),
+//      'state_responsible_assignment' => array(
+//        'type' => 'varchar',
+//        'length' => '4',
+//        'not null' => FALSE,
+//        'description' => 'State in which the responsible is assigned (optional).',
+//      ),
+//      'states_final' => array(
+//        'type' => 'varchar',
+//        'length' => '255',
+//        'not null' => TRUE,
+//        'description' => 'Comma-separated of final states (the author finishes the workflow and rates it).',
+//      ),
+//      'states_responsible_assigned' => array(
+//        'type' => 'varchar',
+//        'length' => '255',
+//        'not null' => FALSE,
+//        'description' => 'Comma-separated final of states in which the responsible is already assigned (optional, the field of responsible is not shown on edit).',
+//      ),
+//      'role_supervisor' => array(
+//        'type' => 'varchar',
+//        'length' => '255',
+//        'not null' => FALSE,
+//        'description' => 'Role of the supervisor or manager, person who assigns the responsible (optional).',
+//      ),
+    ),
+    'primary key' => array('name'),
+  );
+  
+  return $schema;
+}
+
+
+/**
+ * Implements of hook_uninstall().
+ */
+function workflow_hide_fields_uninstall() {
+  variable_del('workflow_hide_fields_settings');
+}
