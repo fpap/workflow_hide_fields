@@ -61,6 +61,30 @@ function workflow_hide_fields_ctools_plugin_directory($module, $type) {
 }
 
 /**
+ * Fetches all presets from the database and returns them as an associative array.
+ */
+function workflow_hide_fields_preset_load_all() {
+  ctools_include('export');
+  $presets = ctools_export_crud_load_all('workflow_hide_fields_preset');
+  foreach ($presets as $preset) {
+    // Ensure the preset is typecast after being loaded from DB
+    _workflow_hide_fields_typecast_preset($preset->options);
+  }
+  return $presets;
+}
+
+/**
+ * Fetches the given preset and returns it as an object or NULL, if no set could be found.
+ */
+function workflow_hide_fields_preset_load($preset_name) {
+  ctools_include('export');
+  $preset = ctools_export_crud_load('workflow_hide_fields_preset', $preset_name);
+    // Ensure the preset is typecast after being loaded from DB
+  _workflow_hide_fields_typecast_preset($preset->options);
+  return $preset;
+}
+
+/**
  * Checks whether an option set with the given name already exists.
  */
 function workflow_hide_fields_preset_exists($preset_name) {
