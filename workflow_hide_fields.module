@@ -160,6 +160,17 @@ function _workflow_hide_fields_typecast_preset(&$options) {
  * Implements hook_field_access
  */
 function workflow_hide_fields_field_access($op, $field, $entity_type, $entity, $account) {
+  
+  $presets = array();
+  ctools_include('export');
+  foreach (workflow_hide_fields_preset_load_all() as $name => $preset) {
+    //$presets[$name] = check_plain($preset->title);
+    $presets[] = check_plain($preset->options['nodeType']);
+  }
+  
+  //drupal_set_message('<pre>' . print_r($presets, true) . '</pre>', 'warning');
+  // TODO: Begin to fix comparisons!
+  
   // If the entity is equal as the given type
   if (isset($entity->type) && $entity->type == "orden_de_trabajo") { // TODO: Convert to variable "orden_de_trabajo"
   
