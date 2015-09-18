@@ -123,7 +123,7 @@ function workflow_hide_fields_form_preset_edit($form, &$form_state) {
     '#maxlength' => '255',
     '#machine_name' => array(
       'source' => array('title'),
-      'exists' => 'elexslider_optionset_exists',
+      'exists' => 'workflow_hide_fields_preset_exists',
     ),
     '#required' => TRUE,
     '#default_value' => $preset->name,
