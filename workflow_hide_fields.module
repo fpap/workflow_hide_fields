@@ -258,7 +258,8 @@ function workflow_hide_fields_node_access($node, $op, $account) {
     if (isset($node->$property_resp)) {
       $node_property_resp = $node->$property_resp;
       if (isset($node_property_resp['und']))
-        $responsible = $node_property_resp['und'][0]['target_id'];
+        if (isset($node_property_resp['und'][0]))
+          $responsible = $node_property_resp['und'][0]['target_id'];
     }
     
     if ($op == "update") {
