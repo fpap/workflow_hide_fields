@@ -22,13 +22,14 @@ function workflow_hide_fields_option_elements($options = array()) {
   );
 
   $form['general_settings']['nodeType'] = array(
-    '#type' => 'textfield',
+    '#type' => 'select',
     '#title' => t('Node type'),
+    '#multiple' => FALSE,
     '#description' => t('The Node type'),
-//////    '#element_validate' => array('_elexslider_validate_positive_integer'),
+    '#options' => node_type_get_names(),
     '#default_value' => $options['nodeType'],
-    '#size' => 30,
   );
+
   $form['general_settings']['fieldResponsible'] = array(
     '#type' => 'textfield',
     '#title' => t('Field Responsible'),
