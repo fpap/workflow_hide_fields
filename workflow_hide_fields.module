@@ -111,6 +111,7 @@ function _workflow_hide_fields_preset_defaults($key = NULL) {
     'fieldsWritableOnlyOnCreation' => '',
     'stateResponsibleAssignment' => '',
     'statesFinal' => '',
+    'statesRating' => '',
     'statesResponsibleAssigned' => '',
     'roleSupervisor' => '',
   );
@@ -142,6 +143,7 @@ function _workflow_hide_fields_typecast_preset(&$options) {
         case 'fieldsWritableOnlyOnCreation':
         case 'stateResponsibleAssignment':
         case 'statesFinal':
+        case 'statesRating':
         case 'statesResponsibleAssigned':
         case 'roleSupervisor':
           $options[$key] = (string) $value;
@@ -161,45 +163,42 @@ function workflow_hide_fields_field_access($op, $field, $entity_type, $entity, $
   $presets = array();
   ctools_include('export');
   foreach (workflow_hide_fields_preset_load_all() as $name => $preset) {
-    //$presets[$name] = check_plain($preset->title);
     $presets[] = check_plain($preset->options['nodeType']);
     $namedPresets[$preset->options['nodeType']] = $preset->options;
   }
 
-  //drupal_set_message('<pre>' . print_r($presets, true) . '</pre>', 'warning');
-  // TODO: Begin to fix comparisons!
   // If the entity is equal as the given type
   if (isset($entity->type) && in_array($entity->type, $presets)) {
     // If the field is the right one
     if (($field['field_name'] == $namedPresets[$entity->type]['fieldResponsible']) && ($op == 'edit')) {
-      $propiedad = $namedPresets[$entity->type]['fieldState'];
-      $en_creacion = !isset($entity->$propiedad);
+      $property = $namedPresets[$entity->type]['fieldState'];
+      $in_creation = !isset($entity->$property);
 
       $state = '0';
-      if (!$en_creacion) {
-        $entity_property = $entity->$propiedad;
+      if (!$in_creation) {
+        $entity_property = $entity->$property;
         $state = $entity_property['und'][0]['value'];
       }
 
-      if ($en_creacion || $state != $namedPresets[$entity->type]['stateResponsibleAssignment'])
+      if ($in_creation || $state != $namedPresets[$entity->type]['stateResponsibleAssignment'])
         return user_access('administer nodes', $account);
     }
 
     // If the field is the right one
     if (($field['field_name'] == $namedPresets[$entity->type]['fieldRating']) && ($op == 'edit')) {
-      $propiedad = $namedPresets[$entity->type]['fieldState'];
-      $en_creacion = !isset($entity->$propiedad);
+      $property = $namedPresets[$entity->type]['fieldState'];
+      $in_creation = !isset($entity->$property);
 
       $state = '0';
-      if (!$en_creacion) {
-        $entity_property = $entity->$propiedad;
+      if (!$in_creation) {
+        $entity_property = $entity->$property;
         $state = $entity_property['und'][0]['value'];
       }
 
-      if ($en_creacion || $state != '6')
+      $ratingStates = explode(',', $namedPresets[$node->type]['statesRating']);
+      if ($in_creation || (!in_array($state, $ratingStates)))
         return user_access('administer nodes', $account);
     }
-
 
     return TRUE;
   }
@@ -212,7 +211,7 @@ function workflow_hide_fields_form_alter(&$form, &$form_state, $form_id) {
     $presets[] = check_plain($preset->options['nodeType'] . '_node_form');
     $namedPresets[$preset->options['nodeType'] . '_node_form'] = $preset->options;
   }
-  
+
   if (in_array($form_id, $presets)) {
     unset($form['actions']['preview']);
     $node = $form_state['node'];
@@ -241,48 +240,46 @@ function workflow_hide_fields_node_access($node, $op, $account) {
   if (isset($node->type) && in_array($node->type, $presets)) {
     global $user;
 
-    $logueado = $user->uid;
-    $autor = $node->uid;
+    $userLoggedIn = $user->uid;
+    $author = $node->uid;
 
-    $usuario_logueado_es_supervisor = false;
+    $userIsSupervisor = false;
 
     if (in_array($namedPresets[$node->type]['roleSupervisor'], $user->roles)) {
-      $usuario_logueado_es_supervisor = true; // TODO: Change the variable name
+      $userIsSupervisor = true;
     }
 
     $property = $namedPresets[$node->type]['fieldState'];
     $node_property = $node->$property;
-    //$lang = $node_property['#language'];
-    $estado = $node_property['und'][0]['value'];
+    $state = $node_property['und'][0]['value'];
 
     $property_resp = $namedPresets[$node->type]['fieldResponsible'];
-    $responsable = NULL;
+    $responsible = NULL;
     if (isset($node->$property_resp)) {
       $node_property_resp = $node->$property_resp;
       if (isset($node_property_resp['und']))
-        $responsable = $node_property_resp['und'][0]['target_id'];
+        $responsible = $node_property_resp['und'][0]['target_id'];
     }
-
+    
     if ($op == "update") {
-      $en_validacion = $estado == $namedPresets[$node->type]['stateResponsibleAssignment'];
+      $inValidation = $state == $namedPresets[$node->type]['stateResponsibleAssignment'];
 
-      $final_states = array(6, 7);
-      $terminado = in_array($estado, $final_states);
-      //$terminado = ($estado == 6) || ($estado == 7);
+      $finalStates = explode(',', $namedPresets[$node->type]['statesFinal']);
+      $finished = in_array($state, $finalStates);
 
-      $supervisor_validando = $en_validacion && $usuario_logueado_es_supervisor;
+      $supervisorValidating = $inValidation && $userIsSupervisor;
 
-      if ($supervisor_validando) {
+      if ($supervisorValidating) {
         return NODE_ACCESS_IGNORE;
       }
 
-      if (!$en_validacion && !$terminado) {
-        if ($responsable == $logueado) {
+      if (!$inValidation && !$finished) {
+        if ($responsible == $userLoggedIn) {
           return NODE_ACCESS_IGNORE;
         }
       }
 
-      if (($autor == $logueado) && $terminado) {
+      if (($author == $userLoggedIn) && $finished) {
         return NODE_ACCESS_IGNORE;
       }
       else
@@ -290,15 +287,15 @@ function workflow_hide_fields_node_access($node, $op, $account) {
     }
 
     // If there is a responsible (state >= 3) and the logged in user is that responsible, he/she can see it
-    $states_with_responsible = array(4, 5, 6, 7);
-    if (in_array($estado, $states_with_responsible)) {
-      if ($responsable == $logueado) {
+    $statesWithResponsible = explode(',', $namedPresets[$node->type]['statesResponsibleAssigned']);
+    if (in_array($state, $statesWithResponsible)) {
+      if ($responsible == $userLoggedIn) {
         return NODE_ACCESS_IGNORE;
       }
     }
 
     // If only author and supervisor can see it
-    if (($autor != $logueado) && (!$usuario_logueado_es_supervisor)) {
+    if (($author != $userLoggedIn) && (!$userIsSupervisor)) {
       return NODE_ACCESS_DENY;
     }
   }
