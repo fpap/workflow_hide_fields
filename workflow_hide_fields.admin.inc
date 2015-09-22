@@ -43,7 +43,7 @@ function workflow_hide_fields_option_elements($options = array()) {
     '#description' => t('The Field Rating'),
 //////    '#element_validate' => array('_elexslider_validate_positive_integer'),
     '#default_value' => $options['fieldRating'],
-    '#size' => 3,
+    '#size' => 30,
   );
   $form['general_settings']['fieldState'] = array(
     '#type' => 'textfield',
@@ -75,6 +75,14 @@ function workflow_hide_fields_option_elements($options = array()) {
     '#description' => t('The States Final'),
 //////    '#element_validate' => array('_elexslider_validate_positive_integer'),
     '#default_value' => $options['statesFinal'],
+    '#size' => 30,
+  );
+  $form['general_settings']['statesRating'] = array(
+    '#type' => 'textfield',
+    '#title' => t('States Rating'),
+    '#description' => t('The States where the author rates the task'),
+//////    '#element_validate' => array('_elexslider_validate_positive_integer'),
+    '#default_value' => $options['statesRating'],
     '#size' => 30,
   );
   $form['general_settings']['statesResponsibleAssigned'] = array(
