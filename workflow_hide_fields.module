@@ -195,7 +195,7 @@ function workflow_hide_fields_field_access($op, $field, $entity_type, $entity, $
         $state = $entity_property['und'][0]['value'];
       }
 
-      $ratingStates = explode(',', $namedPresets[$node->type]['statesRating']);
+      $ratingStates = explode(',', $namedPresets[$entity->type]['statesRating']);
       if ($in_creation || (!in_array($state, $ratingStates)))
         return user_access('administer nodes', $account);
     }
