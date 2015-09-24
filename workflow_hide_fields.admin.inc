@@ -3,6 +3,30 @@
  * @file
  * Workflow hide fields Administration functionality.
  */
+function ajax_fields_callback($form, $form_state) {
+  return $form['options'][0]['fields'];
+}
+
+function _ajax_get_fields_options($nodetype = '') {
+  if (isset($nodetype)) {
+    $data = field_info_instances("node", $nodetype);
+    $fields = array();
+    foreach ($data as $key => $value) {
+      $fields[$key] = $value['label'];
+    }
+
+    $types = node_type_get_types();
+
+    if (isset($types[$nodetype]) && $types[$nodetype]->has_title) {
+      $fields['title'] = $types[$nodetype]->title_label;
+    }
+
+    return $fields;
+  }
+  else {
+    return array();
+  }
+}
 
 /**
  * Defines the form elements used to edit the Workflow hide fields options
@@ -28,40 +52,64 @@ function workflow_hide_fields_option_elements($options = array()) {
     '#description' => t('The Node type'),
     '#options' => node_type_get_names(),
     '#default_value' => $options['nodeType'],
+    // Bind an ajax callback to the change event (which is the default for the
+    // select form type) of the first dropdown. It will replace the second
+    // dropdown when rebuilt.
+    '#ajax' => array(
+      // When 'event' occurs, Drupal will perform an ajax request in the
+      // background. Usually the default value is sufficient (eg. change for
+      // select elements), but valid values include any jQuery event,
+      // most notably 'mousedown', 'blur', and 'submit'.
+      'event' => 'change',
+      'callback' => 'ajax_fields_callback',
+      'wrapper' => 'fields-replace',
+    ),
   );
 
-  $form['general_settings']['fieldResponsible'] = array(
-    '#type' => 'textfield',
+  // General Settings
+  $form['general_settings']['fields'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Fields'),
+    // The entire enclosing div created here gets replaced when dropdown_first
+    // is changed.
+    '#prefix' => '<div id="fields-replace">',
+    '#suffix' => '</div>',
+  );
+
+  $form['general_settings']['fields']['fieldResponsible'] = array(
+    '#type' => 'select',
     '#title' => t('Field Responsible'),
     '#description' => t('The Field Responsible'),
 //////    '#element_validate' => array('_elexslider_validate_positive_integer'),
-    '#default_value' => $options['fieldResponsible'],
-    '#size' => 30,
+    '#default_value' => isset($options['fieldResponsible']) ? $options['fieldResponsible'] : '',
   );
-  $form['general_settings']['fieldRating'] = array(
-    '#type' => 'textfield',
+
+  $form['general_settings']['fields']['fieldRating'] = array(
+    '#type' => 'select',
     '#title' => t('Field Rating'),
     '#description' => t('The Field Rating'),
 //////    '#element_validate' => array('_elexslider_validate_positive_integer'),
-    '#default_value' => $options['fieldRating'],
-    '#size' => 30,
+    '#default_value' => isset($options['fieldRating']) ? $options['fieldRating'] : '',
   );
-  $form['general_settings']['fieldState'] = array(
-    '#type' => 'textfield',
+
+  $form['general_settings']['fields']['fieldState'] = array(
+    '#type' => 'select',
     '#title' => t('Field State'),
     '#description' => t('The Field State'),
 //////    '#element_validate' => array('_elexslider_validate_positive_integer'),
-    '#default_value' => $options['fieldState'],
-    '#size' => 30,
+    '#default_value' => isset($options['fieldState']) ? $options['fieldState'] : '',
   );
-  $form['general_settings']['fieldsWritableOnlyOnCreation'] = array(
-    '#type' => 'textfield',
+
+  $form['general_settings']['fields']['fieldsWritableOnlyOnCreation'] = array(
+    '#type' => 'select',
     '#title' => t('Fields Writable Only On Creation'),
     '#description' => t('The Fields Writable Only On Creation'),
 //////    '#element_validate' => array('_elexslider_validate_positive_integer'),
-    '#default_value' => $options['fieldsWritableOnlyOnCreation'],
-    '#size' => 300,
+    '#default_value' => isset($options['fieldsWritableOnlyOnCreation']) ? $options['fieldsWritableOnlyOnCreation'] : '',
+    '#multiple' => 'true',
   );
+
+
   $form['general_settings']['stateResponsibleAssignment'] = array(
     '#type' => 'textfield',
     '#title' => t('State Responsible Assignment'),
@@ -150,6 +198,23 @@ function workflow_hide_fields_form_preset_edit($form, &$form_state) {
     $form['options'][] = $value;
   }
 
+  if (!empty($form_state['values']['nodeType'])) {
+    $selected = $form_state['values']['nodeType'];
+
+    // When the form is rebuilt during ajax processing, the $selected variable
+    // will now have the new value and so the options will change.    
+    $form['options'][0]['fields']['fieldResponsible']['#options'] = _ajax_get_fields_options($selected);
+    $form['options'][0]['fields']['fieldRating']['#options'] = _ajax_get_fields_options($selected);
+    $form['options'][0]['fields']['fieldState']['#options'] = _ajax_get_fields_options($selected);
+    $form['options'][0]['fields']['fieldsWritableOnlyOnCreation']['#options'] = _ajax_get_fields_options($selected);
+  }
+  else {
+    $form['options'][0]['fields']['fieldResponsible']['#options'] = _ajax_get_fields_options($form['options'][0]['nodeType']['#default_value']);
+    $form['options'][0]['fields']['fieldRating']['#options'] = _ajax_get_fields_options($form['options'][0]['nodeType']['#default_value']);
+    $form['options'][0]['fields']['fieldState']['#options'] = _ajax_get_fields_options($form['options'][0]['nodeType']['#default_value']);
+    $form['options'][0]['fields']['fieldsWritableOnlyOnCreation']['#options'] = _ajax_get_fields_options($form['options'][0]['nodeType']['#default_value']);
+  }
+
   return $form;
 }
 
@@ -157,7 +222,7 @@ function workflow_hide_fields_form_preset_edit($form, &$form_state) {
  *
  */
 function workflow_hide_fields_settings_form($form, $form_state) {
-  $settings = variable_get('workflow_hide_fields_settings', array('checkbox' => TRUE));//, 'label_prefix_value' => t('Workflow')));
+  $settings = variable_get('workflow_hide_fields_settings', array('checkbox' => TRUE)); //, 'label_prefix_value' => t('Workflow')));
 
   $form['settings'] = array(
     '#type' => 'container',
@@ -178,4 +243,3 @@ function workflow_hide_fields_settings_form($form, $form_state) {
 
   return $form;
 }
-
