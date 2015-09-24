@@ -142,13 +142,15 @@ function _workflow_hide_fields_typecast_preset(&$options) {
         case 'fieldResponsible':
         case 'fieldRating':
         case 'fieldState':
-        case 'fieldsWritableOnlyOnCreation':
         case 'stateResponsibleAssignment':
         case 'statesFinal':
         case 'statesRating':
         case 'statesResponsibleAssigned':
         case 'roleSupervisor':
           $options[$key] = (string) $value;
+          break;
+        case 'fieldsWritableOnlyOnCreation':
+          $options[$key] = (array) $value;
           break;
       }
     }
@@ -220,7 +222,7 @@ function workflow_hide_fields_form_alter(&$form, &$form_state, $form_id) {
     $new_node = (!isset($node->nid) || isset($node->is_new));
 
     if (!$new_node) {
-      $fieldsToDisable = explode(',', $namedPresets[$form_id]['fieldsWritableOnlyOnCreation']);
+      $fieldsToDisable = $namedPresets[$form_id]['fieldsWritableOnlyOnCreation'];
       foreach ($fieldsToDisable as $fieldToDisable) {
         $form[$fieldToDisable]['#disabled'] = TRUE;
       }
