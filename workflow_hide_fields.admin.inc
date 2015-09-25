@@ -45,12 +45,14 @@ function workflow_hide_fields_option_elements($options = array()) {
     '#title' => t('General Settings'),
   );
 
+  $nodeTypes['_select_an_item'] = t('Please select an item');
+  $nodeTypes = array_merge($nodeTypes, node_type_get_names());
   $form['general_settings']['nodeType'] = array(
     '#type' => 'select',
     '#title' => t('Node type'),
     '#multiple' => FALSE,
     '#description' => t('The Node type'),
-    '#options' => node_type_get_names(),
+    '#options' => $nodeTypes,
     '#default_value' => $options['nodeType'],
     // Bind an ajax callback to the change event (which is the default for the
     // select form type) of the first dropdown. It will replace the second
@@ -65,7 +67,7 @@ function workflow_hide_fields_option_elements($options = array()) {
       'wrapper' => 'fields-replace',
     ),
   );
-
+  
   // General Settings
   $form['general_settings']['fields'] = array(
     '#type' => 'fieldset',
