@@ -65,6 +65,11 @@ function workflow_hide_fields_ctools_export_ui_form_validate(&$form, &$form_stat
   if (in_array($nodeType, $nodeTypes))
     form_set_error('nodeType', 'The node type (' . $nodeType . ') is already set in another preset, please select a nonconfigured node type.');
 
+  if ($nodeType == '_select_an_item') {
+    //form_set_error('nodeType', t('Please select an item of field %name.', array('%name' => $element['#title'])));
+    form_set_error('nodeType', t('Please select an item of field Node Type'));
+  }
+
   //form_set_error('nodeType', 'This is the error message that will be displayed. <pre>' . print_r($form['options'][0]['nodeType']['#value'], true) . '</pre>');
   //form_set_error('nodeType', 'Node types: <pre>' . print_r($nodeTypes, true) . '</pre>');
 }
